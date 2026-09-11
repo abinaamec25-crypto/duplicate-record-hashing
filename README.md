@@ -18,6 +18,9 @@ against a naive O(n²) approach.
   side by side.
 - **`sample_generator.py`** — generates a synthetic employee dataset
   with exact duplicates and case/whitespace-variant duplicates mixed in.
+- **`parser.py`** — parses CSV, TSV, JSON, JSON Lines, Excel, PDF,
+  DOCX, and plain text into a consistent record format, even when
+  individual rows do not share the same fields.
 - **`app.py`** — Flask routes that expose the above as a JSON API.
 - **`templates/` + `static/`** — the web UI (HTML/CSS/JS) that
   visualizes the bucket grid, the record table, and a performance chart.
@@ -54,9 +57,13 @@ Then open **http://127.0.0.1:5000** in a browser.
 
 1. **Load data** — click "Generate sample data" (adjust how many
    unique records and what fraction should be duplicates), or upload
-   `sample_data/sample_records.csv` / your own CSV.
+   `sample_data/sample_records.csv` / your own CSV, TSV, JSON,
+   JSON Lines, Excel, PDF, DOCX, or plain text file.
 2. **Pick fields** — choose which columns define whether two records
-   count as "the same" (e.g. `Name` + `Email`).
+   count as "the same" (e.g. `Name` + `Email`). If your uploaded
+   records do not share a common schema, the app now merges all
+   available keys into the field list and lets you select the ones
+   that should be compared.
 3. **Detect duplicates** — runs the hash-based detector and shows:
    - total / unique / duplicate counts
    - hash table stats: table size, load factor, collisions, longest

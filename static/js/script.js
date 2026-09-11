@@ -211,40 +211,101 @@ async function runComparison() {
 }
 
 function drawChart(data) {
-  const ctx = el("perfChart").getContext("2d");
-  if (perfChart) perfChart.destroy();
+  const canvas = el("perfChart");
+  const ctx = canvas.getContext("2d");
 
-  perfChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: data.sizes,
-      datasets: [
-        {
-          label: "Naive O(n²)",
-          data: data.naive_ms,
-          borderColor: "#e2725b",
-          backgroundColor: "rgba(226,114,91,0.12)",
-          tension: 0.25,
-          fill: true,
-        },
-        {
-          label: "Hash table O(n)",
-          data: data.hash_ms,
-          borderColor: "#e0a745",
-          backgroundColor: "rgba(224,167,69,0.12)",
-          tension: 0.25,
-          fill: true,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { title: { display: true, text: "Number of records", color: "#93a1b0" }, ticks: { color: "#93a1b0" }, grid: { color: "#34404d" } },
-        y: { title: { display: true, text: "Time (ms)", color: "#93a1b0" }, ticks: { color: "#93a1b0" }, grid: { color: "#34404d" } },
-      },
-    },
+  const sizes = Array.isArray(data.sizes) ? data.sizes : [];
+  const naive = Array.isArray(data.naive_ms) ? data.naive_ms : [];
+  const hash = Array.isArray(data.hash_ms) ? data.hash_ms : [];
+
+  if (!sizes.length || !naive.length || !hash.length) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(320, rect.width || 640);
+  const height = 260;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const padding = { top: 20, right: 20, bottom: 40, left: 48 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const allValues = [...naive, ...hash];
+  const maxValue = Math.max(1, ...allValues);
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#0f1720";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "#34404d";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i += 1) {
+    const y = padding.top + (chartHeight / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "#93a1b0";
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, height - padding.bottom);
+  ctx.lineTo(width - padding.right, height - padding.bottom);
+  ctx.stroke();
+
+  function drawLine(points, color) {
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i += 1) {
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function mapPoint(index, value) {
+    return {
+      x: padding.left + (index / Math.max(1, sizes.length - 1)) * chartWidth,
+      y: height - padding.bottom - (value / maxValue) * chartHeight,
+    };
+  }
+
+  const naivePoints = naive.map((value, index) => mapPoint(index, value));
+  const hashPoints = hash.map((value, index) => mapPoint(index, value));
+
+  drawLine(naivePoints, "#e2725b");
+  drawLine(hashPoints, "#e0a745");
+
+  ctx.fillStyle = "#93a1b0";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Number of records", width / 2, height - 8);
+
+  ctx.save();
+  ctx.translate(14, height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Time (ms)", 0, 0);
+  ctx.restore();
+
+  ctx.textAlign = "right";
+  for (let i = 0; i <= 4; i += 1) {
+    const value = (maxValue / 4) * (4 - i);
+    const y = padding.top + (chartHeight / 4) * i;
+    ctx.fillText(value.toFixed(1), padding.left - 8, y + 4);
+  }
+
+  ctx.textAlign = "center";
+  sizes.forEach((size, index) => {
+    const x = padding.left + (index / Math.max(1, sizes.length - 1)) * chartWidth;
+    ctx.fillText(String(size), x, height - padding.bottom + 18);
   });
 }
 

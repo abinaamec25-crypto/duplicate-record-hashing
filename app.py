@@ -17,12 +17,10 @@ hashtable.py and duplicate_detector.py -- this file is just the web
 layer around that data structure.
 """
 
-import csv
-import io
-
 from flask import Flask, jsonify, render_template, request
 
 from duplicate_detector import hash_based_detect, performance_comparison
+from parser import parse_uploaded_records
 from sample_generator import generate_dataset
 
 app = Flask(__name__)
@@ -32,6 +30,19 @@ STATE = {
     "records": [],
     "fields": [],
 }
+
+
+def infer_fields(records):
+    fields = []
+    seen = set()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        for key in record.keys():
+            if key not in seen:
+                seen.add(key)
+                fields.append(key)
+    return fields
 
 
 @app.route("/")
@@ -64,19 +75,19 @@ def api_upload():
         return jsonify({"error": "No file uploaded. Use form field name 'file'."}), 400
 
     file = request.files["file"]
-    try:
-        text = file.read().decode("utf-8-sig")
-    except UnicodeDecodeError:
-        return jsonify({"error": "Could not decode file as UTF-8 CSV."}), 400
+    if not file.filename:
+        return jsonify({"error": "No file selected."}), 400
 
-    reader = csv.DictReader(io.StringIO(text))
-    records = [row for row in reader]
+    try:
+        records = parse_uploaded_records(file.read(), file.filename)
+    except Exception as exc:
+        return jsonify({"error": f"Could not parse file '{file.filename}': {exc}"}), 400
 
     if not records:
-        return jsonify({"error": "CSV appears to be empty."}), 400
+        return jsonify({"error": "Uploaded file appears to be empty or unsupported."}), 400
 
     STATE["records"] = records
-    STATE["fields"] = list(records[0].keys())
+    STATE["fields"] = infer_fields(records)
 
     return jsonify({
         "records": records,
