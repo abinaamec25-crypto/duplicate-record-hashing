@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duplicate Record Detection — Hashing Technique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="top">
+  <h1>Duplicate Record Detection using Hashing</h1>
+  <p>Load a dataset, watch it fill a hash table bucket by bucket, and see
+     which records collide into an existing key versus a genuinely new one.
+     A side-by-side timing run compares this against a naive O(n²) scan.</p>
+</header>
+
+<main>
+  <div class="rail">
+
+    <section class="block">
+      <h2>Dataset</h2>
+      <div class="field-row">
+        <label for="numUnique">Unique records to generate</label>
+        <input type="number" id="numUnique" value="60" min="5" max="2000">
+      </div>
+      <div class="field-row">
+        <label for="dupRatio">Duplicate ratio (0–0.9)</label>
+        <input type="number" id="dupRatio" value="0.35" min="0" max="0.9" step="0.05">
+      </div>
+      <button class="btn primary full" id="btnSample">Generate sample data</button>
+
+      <div class="field-row" style="margin-top:14px;">
+        <label for="fileInput">…or upload a CSV</label>
+        <input type="file" id="fileInput" accept=".csv">
+      </div>
+      <button class="btn full" id="btnUpload">Upload CSV</button>
+
+      <div class="status-line" id="datasetStatus">No dataset loaded yet.</div>
+    </section>
+
+    <section class="block">
+      <h2>Fields to compare</h2>
+      <div class="checkbox-list" id="fieldList">
+        <span style="color:var(--text-dim); font-size:12.5px;">Load a dataset to choose fields.</span>
+      </div>
+    </section>
+
+    <section class="block">
+      <button class="btn primary full" id="btnDetect" disabled>Detect duplicates</button>
+      <button class="btn full" id="btnCompare" disabled>Run performance comparison</button>
+    </section>
+
+  </div>
+
+  <div class="canvas">
+
+    <section class="block" id="statsSection" style="display:none;">
+      <h2>Result summary</h2>
+      <div class="stat-grid">
+        <div class="stat-cell"><div class="stat-label">Total records</div><div class="stat-value" id="statTotal">–</div></div>
+        <div class="stat-cell uniq"><div class="stat-label">Unique</div><div class="stat-value" id="statUnique">–</div></div>
+        <div class="stat-cell dup"><div class="stat-label">Duplicates</div><div class="stat-value" id="statDup">–</div></div>
+        <div class="stat-cell"><div class="stat-label">Table size</div><div class="stat-value" id="statTableSize">–</div></div>
+        <div class="stat-cell"><div class="stat-label">Load factor</div><div class="stat-value" id="statLoadFactor">–</div></div>
+        <div class="stat-cell"><div class="stat-label">Collisions</div><div class="stat-value" id="statCollisions">–</div></div>
+        <div class="stat-cell"><div class="stat-label">Max chain length</div><div class="stat-value" id="statMaxChain">–</div></div>
+        <div class="stat-cell"><div class="stat-label">Resizes triggered</div><div class="stat-value" id="statResizes">–</div></div>
+      </div>
+    </section>
+
+    <section class="block" id="bucketSection" style="display:none;">
+      <h2>Hash table bucket view</h2>
+      <div class="bucket-wrap">
+        <div class="bucket-grid" id="bucketGrid"></div>
+        <div class="bucket-legend">
+          <div><span class="swatch" style="background:#263140;"></span>empty</div>
+          <div><span class="swatch" style="background:#2c4a49;"></span>1 record</div>
+          <div><span class="swatch" style="background:#3d5f52;"></span>2 records</div>
+          <div><span class="swatch" style="background:#5a3b2e;"></span>3+ / collided</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="tableSection" style="display:none;">
+      <h2>Records</h2>
+      <div class="table-wrap">
+        <table class="records" id="recordsTable">
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block" id="chartSection" style="display:none;">
+      <h2>Naive O(n²) vs. hashing O(n) — timing comparison</h2>
+      <div class="chart-wrap">
+        <canvas id="perfChart" height="260"></canvas>
+        <div class="legend-line">
+          <div><span class="swatch" style="background:#e2725b;"></span>Naive linear scan</div>
+          <div><span class="swatch" style="background:#e0a745;"></span>Hash table</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="placeholderSection">
+      <div class="empty-hint">Generate a sample dataset or upload a CSV on the left to begin.</div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="note">
+  Built for a Data Structures course project — collision handling via
+  separate chaining, a djb2-style polynomial rolling hash, and dynamic
+  resizing at load factor <code>0.7</code>. See <code>hashtable.py</code>
+  and <code>duplicate_detector.py</code> for the implementation.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
